@@ -24,13 +24,14 @@ class TodoList extends StatefulWidget {
 }
 
 class _TodoListState extends State<TodoList> {
-  late final List<String> _todoItems;
+  final List<String> _todoItems = [];
 
-  void _addTodoItem() {
-    setState(() {
-      int index = _todoItems.length;
-      _todoItems.add('Item $index');
-    });
+  void _addTodoItem(String task) {
+    if (task.isNotEmpty) {
+      setState(() {
+        _todoItems.add(task);
+      });
+    }
   }
 
   Widget _buildTodoList() {
@@ -39,10 +40,6 @@ class _TodoListState extends State<TodoList> {
       itemBuilder: (context, index) {
         final item = _todoItems[index];
         return _buildTodoItem(item);
-        // if (index < _todoItems.length) {
-        //   return _buildTodoItem(_todoItems[index]);
-        // }
-        // throw ("returning null");
       },
     );
   }
@@ -53,13 +50,28 @@ class _TodoListState extends State<TodoList> {
     );
   }
 
+  void _pushAddTodoScreen() {
+    Navigator.of(context).push(MaterialPageRoute(builder: (context) {
+      return Scaffold(
+          appBar: AppBar(title: const Text('Add a new task')),
+          body: TextField(
+            autofocus: true,
+            onSubmitted: (val) {
+              _addTodoItem(val);
+              Navigator.pop(context);
+            },
+            decoration: const InputDecoration(hintText: 'Enter something to do...', contentPadding: EdgeInsets.all(16.0)),
+          ));
+    }));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Todo List')),
       body: _buildTodoList(),
       floatingActionButton: FloatingActionButton(
-        onPressed: _addTodoItem,
+        onPressed: _pushAddTodoScreen,
         tooltip: 'Add Task',
         child: const Icon(Icons.add),
       ),
