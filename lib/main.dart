@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(const TodoApp());
@@ -24,14 +25,35 @@ class TodoList extends StatefulWidget {
 }
 
 class _TodoListState extends State<TodoList> {
-  final List<String> _todoItems = [];
+  List<String> _todoItems = [];
 
-  void _addTodoItem(String task) {
+  @override
+  void initState() {
+    super.initState();
+    _loadTodoList();
+  }
+
+  Future<void> _loadTodoList() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _todoItems = (prefs.getStringList('todoItems') ?? []);
+    });
+  }
+
+  Future<void> _addTodoItem(String task) async {
+    final prefs = await SharedPreferences.getInstance();
     if (task.isNotEmpty) {
       setState(() {
         _todoItems.add(task);
       });
+      prefs.setStringList('todoItems', _todoItems);
     }
+  }
+
+  void _removeTodoItem(int index) async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() => _todoItems.removeAt(index));
+    prefs.setStringList("todoItems", _todoItems);
   }
 
   Widget _buildTodoList() {
@@ -39,15 +61,32 @@ class _TodoListState extends State<TodoList> {
       itemCount: _todoItems.length,
       itemBuilder: (context, index) {
         final item = _todoItems[index];
-        return _buildTodoItem(item);
+        return _buildTodoItem(item, index);
       },
     );
   }
 
-  Widget _buildTodoItem(String todoText) {
+  Widget _buildTodoItem(String todoText, int index) {
     return ListTile(
       title: Text(todoText),
+      onTap: (() => _promptRemoveTodoItem(index)),
     );
+  }
+
+  void _promptRemoveTodoItem(int index) {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(title: Text('Mark "${_todoItems[index]}" as done?'), actions: <Widget>[
+            TextButton(child: const Text('CANCEL'), onPressed: () => Navigator.of(context).pop()),
+            TextButton(
+                child: const Text('MARK AS DONE'),
+                onPressed: () {
+                  _removeTodoItem(index);
+                  Navigator.of(context).pop();
+                })
+          ]);
+        });
   }
 
   void _pushAddTodoScreen() {
